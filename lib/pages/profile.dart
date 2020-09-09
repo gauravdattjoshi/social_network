@@ -42,19 +42,19 @@ bool isFollow = false;
   }
 
 getFollowersCount ()async{
- await followerRef.document(currentUserId).collection("userFollowers").getDocuments().then((doc){
+ await followerRef.document(widget.profileId).collection("userFollowers").getDocuments().then((doc){
   followersCount =  doc.documents.length;
  });
 }
 
 checkFollowing()async{
- await  followingRef.document(widget.profileId).collection('userFollowing').document(currentUserId).get().then((doc) {
+ await  followingRef.document(currentUserId).collection('userFollowing').document(currentUserId).get().then((doc) {
     isFollow = doc.exists;
   });
 }
 
 getFollowingCount ()async{
-   await followerRef.document(currentUserId).collection("userFollowing").getDocuments().then((doc){
+   await followerRef.document(widget.profileId).collection("userFollowing").getDocuments().then((doc){
      followingCount = doc.documents.length;
    });
  
@@ -154,8 +154,8 @@ handleFollow()async{
   setState(() {
     isFollow=true;
   });
-    await followerRef.document(currentUserId).collection("userFollowers").document(widget.profileId).setData({});
-    await followingRef.document(widget.profileId).collection("userFollowing").document(currentUserId).setData({});
+    await followerRef.document(widget.profileId).collection("userFollowers").document(currentUserId).setData({});
+    await followingRef.document(currentUserId).collection("userFollowing").document(widget.profileId).setData({});
 
 
 }
