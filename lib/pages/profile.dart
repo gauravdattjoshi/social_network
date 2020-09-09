@@ -9,6 +9,10 @@ import 'package:social_network/widgets/post.dart';
 import 'package:social_network/widgets/post_tile.dart';
 import 'package:social_network/widgets/progress.dart';
 
+import 'home.dart';
+import 'home.dart';
+import 'home.dart';
+
 class Profile extends StatefulWidget {
   User user;
 
@@ -25,13 +29,36 @@ class _ProfileState extends State<Profile> {
   String postOrientation = "grid";
   int postCount = 0;
   List<Post> posts = [];
-
+  int followersCount = 0;
+  int followingCount =0;
+bool isFollow = false;
   @override
   void initState() {
     super.initState();
     getProfilePosts();
+    getFollowersCount();
+    getFollowingCount();
+    checkFollowing();
   }
 
+getFollowersCount ()async{
+ await followerRef.document(currentUserId).collection("userFollowers").getDocuments().then((doc){
+  followersCount =  doc.documents.length;
+ });
+}
+
+checkFollowing()async{
+ await  followingRef.document(widget.profileId).collection('userFollowing').document(currentUserId).get().then((doc) {
+    isFollow = doc.exists;
+  });
+}
+
+getFollowingCount ()async{
+   await followerRef.document(currentUserId).collection("userFollowing").getDocuments().then((doc){
+     followingCount = doc.documents.length;
+   });
+ 
+}
   getProfilePosts() async {
     setState(() {
       isLoading = true;
@@ -95,13 +122,13 @@ class _ProfileState extends State<Profile> {
           child: Text(
             text,
             style: TextStyle(
-              color: Colors.white,
+              color: isFollow == true ? Colors.black : Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: isFollow == true ? Colors.white54 :Colors.blue,
             border: Border.all(
               color: Colors.blue,
             ),
@@ -117,10 +144,39 @@ class _ProfileState extends State<Profile> {
     bool isProfileOwner = currentUserId == widget.profileId;
     if (isProfileOwner) {
       return buildButton(text: "Edit Profile", function: editProfile);
-    } else {
-      return Text("test button");
+    } else if(isFollow) {
+      return buildButton(text: "Follow", function: handleFollow);
+    }else if(!isFollow){
+      return buildButton(text: "Unfollow", function: handleUnfollow);
     }
   }
+handleFollow()async{
+  setState(() {
+    isFollow=true;
+  });
+    await followerRef.document(currentUserId).collection("userFollowers").document(widget.profileId).setData({});
+    await followingRef.document(widget.profileId).collection("userFollowing").document(currentUserId).setData({});
+
+
+}
+
+handleUnfollow()async{
+setState(() {
+    isFollow=true;
+  });
+    await followerRef.document(currentUserId).collection("userFollowers").document(widget.profileId).get().then((doc) {
+      if(doc.exists){
+        doc.reference.delete();
+      }
+    });
+    await followingRef.document(widget.profileId).collection("userFollowing").document(currentUserId).get().then((doc) {
+      if(doc.exists){
+        doc.reference.delete();
+      }
+    
+    });
+
+}
 
   buildProfileHeader() {
     return FutureBuilder(
@@ -150,8 +206,8 @@ class _ProfileState extends State<Profile> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             buildCountColumn("posts", postCount),
-                            buildCountColumn("followers", 0),
-                            buildCountColumn("following", 0),
+                            buildCountColumn("followers", followersCount),
+                            buildCountColumn("following", followingCount),
                           ],
                         ),
                         Row(
