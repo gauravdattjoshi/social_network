@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:social_network/models/user.dart';
 import 'package:social_network/pages/home.dart';
+import 'package:social_network/pages/profile.dart';
 import 'package:social_network/widgets/constant.dart';
 import 'package:social_network/widgets/progress.dart';
 
@@ -103,6 +104,9 @@ class UserResult extends StatelessWidget {
     return Container(
       color: Colors.deepPurple.shade700,
       child: ListTile(
+        onTap: () {
+          showProfile(context, profileId: user.id);
+        },
         title: Text(
           user.displayName,
           style: knormalText,

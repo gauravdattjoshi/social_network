@@ -86,6 +86,24 @@ class CommentsState extends State<Comments> {
                           "comment": commentController.text,
                           "timestamp": timestamp
                         });
+                        bool notCurrentOwner =
+                            commentsOwnerId != currentUser?.id;
+                        if (notCurrentOwner) {
+                            feedsRef
+                              .document(commentsOwnerId)
+                              .collection("feedItems")
+                              .add({
+                            "userId": commentsOwnerId,
+                            "mediaUrl": commentsMediaUrl,
+                            "postId": commentsPostId,
+                            "username": currentUser.username,
+                            "photoUrl": currentUser.photoUrl,
+                            "timestamp": timestamp,
+                            "commentData": commentController.text,
+                            "type": "comment"
+                            });
+                        }
+
                         commentController.clear();
                       },
                       child: Text(

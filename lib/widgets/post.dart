@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:social_network/models/user.dart';
 import 'package:social_network/pages/comments.dart';
 import 'package:social_network/pages/home.dart';
+import 'package:social_network/pages/profile.dart';
 import 'package:social_network/widgets/custom_image.dart';
 import 'package:social_network/widgets/progress.dart';
 
@@ -104,9 +105,14 @@ class _PostState extends State<Post> {
         }
         User user = User.fromDocuments(snapshot.data);
         return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: NetworkImage(user.photoUrl),
-            backgroundColor: Colors.grey,
+          leading: GestureDetector(
+            onTap: () {
+              showProfile(context, profileId: ownerId);
+            },
+            child: CircleAvatar(
+              backgroundImage: NetworkImage(user.photoUrl),
+              backgroundColor: Colors.grey,
+            ),
           ),
           title: GestureDetector(
             onTap: () => print('showing profile'),
@@ -258,10 +264,13 @@ class _PostState extends State<Post> {
     String postId,
     String mediaUrl,
   }) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => Comments(
-          commentsMediaUrl: mediaUrl, commentsOwnerId: ownerId,commentsPostId: postId,commentsPostUsername: username,
-        )));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => Comments(
+              commentsMediaUrl: mediaUrl,
+              commentsOwnerId: ownerId,
+              commentsPostId: postId,
+              commentsPostUsername: username,
+            )));
   }
 
   handleLikes() async {
@@ -272,6 +281,16 @@ class _PostState extends State<Post> {
           .collection("usersPosts")
           .document(postId)
           .updateData({"likes.$currentUserId": false});
+      feedsRef
+          .document(ownerId)
+          .collection("feedItems")
+          .document(postId)
+          .get()
+          .then((doc) {
+        if (doc.exists) {
+          doc.reference.delete();
+        }
+      });
       setState(() {
         likeCount -= 1;
         isLiked = false;
@@ -283,6 +302,24 @@ class _PostState extends State<Post> {
           .collection("usersPosts")
           .document(postId)
           .updateData({"likes.$currentUserId": true});
+      bool notCurrentOwner = currentUserId != ownerId;
+
+      if (notCurrentOwner) {
+        feedsRef
+            .document(ownerId)
+            .collection("feedItems")
+            .document(postId)
+            .setData({
+          "userId": ownerId,
+          "mediaUrl": mediaUrl,
+          "postId": postId,
+          "username": currentUser.username,
+          "photoUrl": currentUser.photoUrl,
+          "timestamp": timestamp,
+          "type": "likes"
+        });
+      }
+
       setState(() {
         likeCount += 1;
         isLiked = true;

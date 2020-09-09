@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:social_network/pages/home.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   Firestore.instance
       .settings(timestampsInSnapshotsEnabled: true)
       .then((_) => print("sucess"), onError: (_) => print("false  nl"));

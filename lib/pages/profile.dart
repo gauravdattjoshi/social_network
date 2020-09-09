@@ -11,7 +11,9 @@ import 'package:social_network/widgets/progress.dart';
 
 class Profile extends StatefulWidget {
   User user;
-  Profile({this.user});
+
+  final String profileId;
+  Profile({this.user, this.profileId});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -34,9 +36,9 @@ class _ProfileState extends State<Profile> {
     setState(() {
       isLoading = true;
     });
-    print(widget.user.id);
+    print(widget.profileId);
     QuerySnapshot snapshot = await postsRef
-        .document(currentUserId)
+        .document(widget.profileId)
         .collection('usersPosts')
         .orderBy("timestamp", descending: true)
         .getDocuments();
@@ -112,15 +114,17 @@ class _ProfileState extends State<Profile> {
 
   buildProfileButton() {
     // viewing your own profile - should show edit profile button
-    bool isProfileOwner = currentUserId == widget.user.id;
+    bool isProfileOwner = currentUserId == widget.profileId;
     if (isProfileOwner) {
       return buildButton(text: "Edit Profile", function: editProfile);
+    } else {
+      return Text("test button");
     }
   }
 
   buildProfileHeader() {
     return FutureBuilder(
-      future: usersRef.document(widget.user.id).get(),
+      future: usersRef.document(widget.profileId).get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return circularProgress();
@@ -210,7 +214,12 @@ class _ProfileState extends State<Profile> {
     }
     List<GridTile> gridTile = [];
     posts.forEach((post) {
-      gridTile.add(GridTile(child: PostTile(post)));
+      gridTile.add(GridTile(
+          child: PostTile(
+        post: post,
+        userId: post.ownerId,
+        postId: post.postId,
+      )));
     });
     return GridView.count(
       physics: NeverScrollableScrollPhysics(),
@@ -244,7 +253,9 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: header(context, titleText: "Profile"),
+      appBar: currentUserId == widget.profileId
+          ? header(context, titleText: "Profile")
+          : header(context, titleText: "Profile", leading: true),
       body: ListView(
         children: <Widget>[
           buildProfileHeader(),
@@ -279,4 +290,11 @@ class _ProfileState extends State<Profile> {
       ),
     );
   }
+}
+
+showProfile(context, {String profileId}) {
+  Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => Profile(
+            profileId: profileId,
+          )));
 }
