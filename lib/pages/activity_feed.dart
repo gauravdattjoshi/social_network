@@ -86,6 +86,8 @@ class ActivityFeedItem extends StatelessWidget {
       return changedText = "replied: $commentData";
     } else if (type.isEmpty) {
       return changedText = "Error : no type";
+    }else if (type == 'follow'){
+      return changedText = "followed you";
     }
   }
 
@@ -108,7 +110,7 @@ class ActivityFeedItem extends StatelessWidget {
                           userId: userId,
                         )));
           },
-          child: CachedNetworkImage(
+          child: type == "follow"? Text("") :CachedNetworkImage(
             imageUrl: mediaUrl,
             height: 50,
             width: 50,

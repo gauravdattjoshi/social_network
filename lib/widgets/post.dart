@@ -96,6 +96,39 @@ class _PostState extends State<Post> {
     this.likeCount,
   });
 
+  delete() async {
+    postsRef
+        .document(ownerId)
+        .collection('usersPosts')
+        .document(postId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+
+    storageRef.child("post_$postId.jpg").delete();
+    var activityFeedSnapshots = await feedsRef
+        .document(ownerId)
+        .collection("feedItems")
+        .where("postId", isEqualTo: postId)
+        .getDocuments();
+    activityFeedSnapshots.documents.forEach((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+
+    var commentSnapshots =
+        await commentsRef.document(postId).collection('comment').getDocuments();
+    commentSnapshots.documents.forEach((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+  }
+
   buildPostHeader() {
     return FutureBuilder(
       future: usersRef.document(ownerId).get(),
@@ -125,10 +158,31 @@ class _PostState extends State<Post> {
             ),
           ),
           subtitle: Text(location),
-          trailing: IconButton(
-            onPressed: () => print('deleting post'),
-            icon: Icon(Icons.more_vert),
-          ),
+          trailing: currentUser.id == ownerId
+              ? IconButton(
+                  onPressed: () => showDialog(
+                      context: context,
+                      child: SimpleDialog(
+                        title: Text("Want to delete the post?"),
+                        children: <Widget>[
+                          SimpleDialogOption(
+                            child: Text("Cancel"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                          SimpleDialogOption(
+                            child: Text("Ok"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              delete();
+                            },
+                          )
+                        ],
+                      )),
+                  icon: Icon(Icons.more_vert),
+                )
+              : Text(""),
         );
       },
     );

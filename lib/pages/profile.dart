@@ -30,8 +30,8 @@ class _ProfileState extends State<Profile> {
   int postCount = 0;
   List<Post> posts = [];
   int followersCount = 0;
-  int followingCount =0;
-bool isFollow = false;
+  int followingCount = 0;
+  bool isFollow = false;
   @override
   void initState() {
     super.initState();
@@ -41,24 +41,39 @@ bool isFollow = false;
     checkFollowing();
   }
 
-getFollowersCount ()async{
- await followerRef.document(widget.profileId).collection("userFollowers").getDocuments().then((doc){
-  followersCount =  doc.documents.length;
- });
-}
+  getFollowersCount() async {
+    await followerRef
+        .document(widget.profileId)
+        .collection("userFollowers")
+        .getDocuments()
+        .then((doc) {
+      followersCount = doc.documents.length;
+    });
+  }
 
-checkFollowing()async{
- await  followingRef.document(currentUserId).collection('userFollowing').document(currentUserId).get().then((doc) {
-    isFollow = doc.exists;
-  });
-}
+  checkFollowing() async {
+    await followingRef
+        .document(currentUserId)
+        .collection('userFollowing')
+        .document(widget.profileId)
+        .get()
+        .then((doc) {
+      setState(() {
+        isFollow = doc.exists;
+      });
+    });
+  }
 
-getFollowingCount ()async{
-   await followerRef.document(widget.profileId).collection("userFollowing").getDocuments().then((doc){
-     followingCount = doc.documents.length;
-   });
- 
-}
+  getFollowingCount() async {
+    await followingRef
+        .document(currentUserId)
+        .collection("userFollowing")
+        .getDocuments()
+        .then((doc) {
+      followingCount = doc.documents.length;
+    });
+  }
+
   getProfilePosts() async {
     setState(() {
       isLoading = true;
@@ -128,7 +143,7 @@ getFollowingCount ()async{
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isFollow == true ? Colors.white54 :Colors.blue,
+            color: isFollow == true ? Colors.white54 : Colors.blue,
             border: Border.all(
               color: Colors.blue,
             ),
@@ -144,39 +159,79 @@ getFollowingCount ()async{
     bool isProfileOwner = currentUserId == widget.profileId;
     if (isProfileOwner) {
       return buildButton(text: "Edit Profile", function: editProfile);
-    } else if(isFollow) {
+    } else if (isFollow == false) {
       return buildButton(text: "Follow", function: handleFollow);
-    }else if(!isFollow){
+    } else if (isFollow == true) {
       return buildButton(text: "Unfollow", function: handleUnfollow);
     }
   }
-handleFollow()async{
-  setState(() {
-    isFollow=true;
-  });
-    await followerRef.document(widget.profileId).collection("userFollowers").document(currentUserId).setData({});
-    await followingRef.document(currentUserId).collection("userFollowing").document(widget.profileId).setData({});
 
+  handleFollow() async {
+    setState(() {
+      isFollow = true;
+    });
+    await followerRef
+        .document(widget.profileId)
+        .collection("userFollowers")
+        .document(currentUserId)
+        .setData({});
+    await followingRef
+        .document(currentUserId)
+        .collection("userFollowing")
+        .document(widget.profileId)
+        .setData({});
+    await feedsRef
+        .document(widget.profileId)
+        .collection("feedItems")
+        .document(currentUserId)
+        .setData({
+      "userId": currentUserId,
+      "ownerId": widget.profileId,
+      "photoUrl": currentUser.photoUrl,
+      "type": "follow",
+      "timestamp": timestamp,
+      "username": currentUser.username
+    });
+  }
 
-}
-
-handleUnfollow()async{
-setState(() {
-    isFollow=true;
-  });
-    await followerRef.document(currentUserId).collection("userFollowers").document(widget.profileId).get().then((doc) {
-      if(doc.exists){
+  handleUnfollow() async {
+    setState(() {
+      isFollow = false;
+    });
+    await followerRef
+        .document(widget.profileId)
+        .collection("userFollowers")
+        .document(currentUserId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
         doc.reference.delete();
       }
     });
-    await followingRef.document(widget.profileId).collection("userFollowing").document(currentUserId).get().then((doc) {
-      if(doc.exists){
+    await followingRef
+        .document(currentUserId)
+        .collection("userFollowing")
+        .document(widget.profileId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
         doc.reference.delete();
       }
-    
     });
 
-}
+    await feedsRef
+        .document(widget.profileId)
+        .collection("feedItems")
+        .document(currentUserId)
+        .get()
+        .then(
+      ((doc) {
+        if (doc.exists) {
+          doc.reference.delete();
+        }
+      }),
+    );
+  }
 
   buildProfileHeader() {
     return FutureBuilder(
